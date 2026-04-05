@@ -130,6 +130,7 @@ class TriviaClientWindow(QMainWindow):
         self._fade_anim: Optional[QPropertyAnimation] = None
         self._waiting_dot_phase = 0
         self.latest_scores = {"Player 1": 0, "Player 2": 0}
+        self.player_names = {"Player 1": "Player 1", "Player 2": "Player 2"}
         self.game_over_received = False
 
         self.tick_timer = QTimer(self)
@@ -757,7 +758,12 @@ class TriviaClientWindow(QMainWindow):
         )
 
     def _format_scores(self, scores: dict) -> str:
-        return f"Player 1: {scores.get('Player 1', 0)}   |   Player 2: {scores.get('Player 2', 0)}"
+        p1 = self.player_names.get("Player 1", "Player 1")
+        p2 = self.player_names.get("Player 2", "Player 2")
+        return f"{p1}: {scores.get('Player 1', 0)}   |   {p2}: {scores.get('Player 2', 0)}"
+
+    def _name_for(self, role: str) -> str:
+        return self.player_names.get(role, role)
 
     def _update_score_labels(self, scores: dict) -> None:
         self.latest_scores = {
@@ -787,6 +793,7 @@ class TriviaClientWindow(QMainWindow):
             print("\a", end="", flush=True)
 
     def _show_category_reveal(self, msg: dict) -> None:
+        self.player_names = msg.get("player_names", self.player_names)
         scores = msg.get("scores", self.latest_scores)
         self._update_score_labels(scores)
         round_text = msg.get("round_label") or f"{msg.get('round', '?')}/{msg.get('total_rounds', '?')}"
@@ -850,8 +857,13 @@ class TriviaClientWindow(QMainWindow):
             return
 
         if msg_type == "WELCOME":
-            self.my_role = msg.get("payload")
-            self.waiting_status.setText(f"Matched. You are {self.my_role}.")
+            payload = msg.get("payload")
+            if isinstance(payload, dict):
+                self.my_role = payload.get("role")
+                self.player_names = payload.get("player_names", self.player_names)
+            else:
+                self.my_role = payload
+            self.waiting_status.setText(f"Matched. You are {self._name_for(self.my_role or 'Player')}.")
             self.waiting_dots_timer.start()
             self._switch_page(self.waiting_page)
             return
@@ -878,16 +890,18 @@ class TriviaClientWindow(QMainWindow):
             return
 
     def _show_question(self, msg: dict) -> None:
+        self.player_names = msg.get("player_names", self.player_names)
         scores = msg.get("scores", {})
         self._update_score_labels(scores)
         round_text = msg.get("round_label") or f"{msg.get('round', '?')}/{msg.get('total_rounds', '?')}"
         suffix = " (Sudden Death)" if msg.get("is_tiebreaker") else ""
         self.header_label.setText(f"Round {round_text}{suffix}")
         self.score_label.setText(
-            f"Player 1: {scores.get('Player 1', 0)}      Player 2: {scores.get('Player 2', 0)}"
+            f"{self._name_for('Player 1')}: {scores.get('Player 1', 0)}      "
+            f"{self._name_for('Player 2')}: {scores.get('Player 2', 0)}"
         )
         self.category_label.setText(f"Category: {msg.get('category', 'Unknown')}")
-        self.role_label.setText(self.my_role or "Player")
+        self.role_label.setText(self._name_for(self.my_role or "Player"))
         self.question_label.setText(msg.get("question", ""))
 
         options = msg.get("options", [])
@@ -941,6 +955,7 @@ class TriviaClientWindow(QMainWindow):
 
     def _show_round_result(self, msg: dict) -> None:
         self.tick_timer.stop()
+        self.player_names = msg.get("player_names", self.player_names)
 
         correct = msg.get("correct_answer")
         your_answer = msg.get("your_answer")
@@ -961,7 +976,7 @@ class TriviaClientWindow(QMainWindow):
             self._play_feedback_sound("wrong")
 
         if winner:
-            self.result_extra.setText(f"Round point awarded to: {winner}")
+            self.result_extra.setText(f"Round point awarded to: {self._name_for(winner)}")
         else:
             self.result_extra.setText("No points awarded this round.")
 
@@ -973,6 +988,7 @@ class TriviaClientWindow(QMainWindow):
         self.tick_timer.stop()
         self.waiting_dots_timer.stop()
         self.game_over_received = True
+        self.player_names = msg.get("player_names", self.player_names)
         scores = msg.get("scores", {})
         self._update_score_labels(scores)
         winner = msg.get("winner", "Tie")
@@ -992,7 +1008,8 @@ class TriviaClientWindow(QMainWindow):
 
         self.final_result.setText(verdict)
         self.final_scores.setText(
-            f"Player 1: {scores.get('Player 1', 0)}\nPlayer 2: {scores.get('Player 2', 0)}"
+            f"{self._name_for('Player 1')}: {scores.get('Player 1', 0)}\n"
+            f"{self._name_for('Player 2')}: {scores.get('Player 2', 0)}"
         )
         self._switch_page(self.game_over_page)
 
@@ -1001,6 +1018,7 @@ class TriviaClientWindow(QMainWindow):
         self.waiting_dots_timer.stop()
         self._cleanup_thread()
         self.my_role = None
+        self.player_names = {"Player 1": "Player 1", "Player 2": "Player 2"}
         self.game_over_received = False
         self.final_heading.setText("Game Over")
         self.final_result.setStyleSheet("")

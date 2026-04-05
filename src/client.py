@@ -86,6 +86,19 @@ def print_divider(char: str = "─", width: int = 60) -> None:
     print(f"{DIM}{char * width}{RESET}")
 
 
+def _name_for(role: str, player_names: dict) -> str:
+    return player_names.get(role, role)
+
+
+def _score_line(scores: dict, player_names: dict) -> str:
+    p1 = _name_for("Player 1", player_names)
+    p2 = _name_for("Player 2", player_names)
+    return (
+        f"{YELLOW}{p1}: {scores.get('Player 1', 0)}{RESET}  "
+        f"{MAGENTA}{p2}: {scores.get('Player 2', 0)}{RESET}"
+    )
+
+
 def play_feedback_sound(kind: str) -> None:
     """Play a lightweight sound cue for round outcomes."""
     if winsound:
@@ -104,13 +117,13 @@ def play_feedback_sound(kind: str) -> None:
         print("\a", end="", flush=True)
 
 
-def display_question(msg: dict, my_role: str) -> None:
+def display_question(msg: dict, my_role: str, player_names: dict) -> None:
     """Pretty-print the question card with round info, scores, and options."""
     scores = msg["scores"]
     round_text = msg.get("round_label") or f"{msg['round']}/{msg['total_rounds']}"
     print_divider()
     print(f"{CYAN}{BOLD}  Round {round_text}  |  Category: {msg['category']}{RESET}")
-    print(f"  Scores — {YELLOW}Player 1: {scores.get('Player 1', 0)}{RESET}  {MAGENTA}Player 2: {scores.get('Player 2', 0)}{RESET}")
+    print(f"  Scores — {_score_line(scores, player_names)}")
     print_divider()
     print(f"\n{WHITE}{BOLD}  {msg['question']}{RESET}\n")
     for option in msg["options"]:
@@ -121,7 +134,7 @@ def display_question(msg: dict, my_role: str) -> None:
     print(f"  Enter your answer ({CYAN}A{RESET}/{CYAN}B{RESET}/{CYAN}C{RESET}/{CYAN}D{RESET}): ", end="", flush=True)
 
 
-def display_round_result(msg: dict, my_role: str) -> None:
+def display_round_result(msg: dict, my_role: str, player_names: dict) -> None:
     """Display the outcome of the most recently completed round."""
     correct     = msg["correct_answer"]
     your_answer = msg["your_answer"]
@@ -143,18 +156,18 @@ def display_round_result(msg: dict, my_role: str) -> None:
         play_feedback_sound("wrong")
 
     if winner:
-        print(f"  {YELLOW}🏆 {winner} earned a point this round!{RESET}")
+        print(f"  {YELLOW}🏆 {_name_for(winner, player_names)} earned a point this round!{RESET}")
     else:
         print(f"  {DIM}  Nobody scored this round.{RESET}")
 
-    print(f"\n  Scores — {YELLOW}Player 1: {scores.get('Player 1', 0)}{RESET}  {MAGENTA}Player 2: {scores.get('Player 2', 0)}{RESET}")
+    print(f"\n  Scores — {_score_line(scores, player_names)}")
     if explanation:
         print(f"\n  {CYAN}Why:{RESET} {explanation}")
     print_divider()
     print()
 
 
-def display_category_reveal(msg: dict) -> None:
+def display_category_reveal(msg: dict, player_names: dict) -> None:
     """Show a category transition card before each round."""
     scores = msg.get("scores", {})
     round_text = msg.get("round_label") or f"{msg.get('round')}/{msg.get('total_rounds')}"
@@ -162,11 +175,11 @@ def display_category_reveal(msg: dict) -> None:
     print_divider("═")
     print(f"{CYAN}{BOLD}  Round {round_text}{suffix}{RESET}")
     print(f"  {YELLOW}Next category:{RESET} {WHITE}{msg.get('category', 'Unknown')}{RESET}")
-    print(f"  Scores — {YELLOW}Player 1: {scores.get('Player 1', 0)}{RESET}  {MAGENTA}Player 2: {scores.get('Player 2', 0)}{RESET}")
+    print(f"  Scores — {_score_line(scores, player_names)}")
     print_divider("═")
 
 
-def display_game_over(msg: dict, my_role: str) -> None:
+def display_game_over(msg: dict, my_role: str, player_names: dict) -> None:
     """Display the final scoreboard and winner."""
     scores = msg["scores"]
     winner = msg["winner"]
@@ -176,8 +189,10 @@ def display_game_over(msg: dict, my_role: str) -> None:
     print_divider("═")
     print(f"{CYAN}{BOLD}  🎉  GAME OVER  🎉{RESET}")
     print_divider("═")
-    print(f"  {YELLOW}Player 1{RESET} : {s1} points")
-    print(f"  {MAGENTA}Player 2{RESET} : {s2} points")
+    p1 = _name_for("Player 1", player_names)
+    p2 = _name_for("Player 2", player_names)
+    print(f"  {YELLOW}{p1}{RESET} : {s1} points")
+    print(f"  {MAGENTA}{p2}{RESET} : {s2} points")
     print_divider()
 
     if winner == "Tie":
@@ -258,6 +273,7 @@ def run_client() -> None:
 
     buf     = [""]
     my_role = None
+    player_names = {"Player 1": "Player 1", "Player 2": "Player 2"}
     send_msg(conn, {"type": "CONNECT", "name": name})
 
     try:
@@ -273,28 +289,38 @@ def run_client() -> None:
                 print(f"  {YELLOW}⏳ {msg.get('payload', 'Waiting...')}{RESET}")
 
             elif msg_type == "WELCOME":
-                my_role = msg.get("payload")
+                payload = msg.get("payload")
+                if isinstance(payload, dict):
+                    my_role = payload.get("role")
+                    player_names = payload.get("player_names", player_names)
+                else:
+                    my_role = payload
                 colour  = YELLOW if my_role == "Player 1" else MAGENTA
-                print(f"  {GREEN}✔ Match found!{RESET}  You are {colour}{BOLD}{my_role}{RESET}\n")
+                label = _name_for(my_role, player_names) if my_role else "Player"
+                print(f"  {GREEN}✔ Match found!{RESET}  You are {colour}{BOLD}{label}{RESET}\n")
 
             elif msg_type == "QUESTION":
-                display_question(msg, my_role)
+                player_names = msg.get("player_names", player_names)
+                display_question(msg, my_role, player_names)
                 answer = get_player_answer(float(msg.get("timeout", 15.0)))
                 send_msg(conn, {"type": "ANSWER", "answer": answer or ""})
 
             elif msg_type == "CATEGORY_REVEAL":
-                display_category_reveal(msg)
+                player_names = msg.get("player_names", player_names)
+                display_category_reveal(msg, player_names)
 
             elif msg_type == "OPPONENT_LOCKED":
                 print(f"\n  {YELLOW}{BOLD}⚡ Opponent locked in.{RESET}")
                 print("  Enter your answer quickly: ", end="", flush=True)
 
             elif msg_type == "ROUND_RESULT":
-                display_round_result(msg, my_role)
+                player_names = msg.get("player_names", player_names)
+                display_round_result(msg, my_role, player_names)
                 time.sleep(1)
 
             elif msg_type == "GAME_OVER":
-                display_game_over(msg, my_role)
+                player_names = msg.get("player_names", player_names)
+                display_game_over(msg, my_role, player_names)
                 break
 
             else:

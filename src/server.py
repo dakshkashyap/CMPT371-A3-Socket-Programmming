@@ -29,7 +29,7 @@ PORT           = 5050           # Listening port
 TOTAL_ROUNDS   = 10             # Number of questions per game
 ANSWER_TIMEOUT = 15.0           # Seconds each player has to answer
 CATEGORY_REVEAL_DELAY = 1.8     # Delay before showing each round question
-ROUND_RESULT_DELAY = 2.2         # Delay before moving to next round
+ROUND_RESULT_DELAY = 3.2         # Delay before moving to next round
 
 from questions import QUESTIONS
 
@@ -67,12 +67,18 @@ def recv_msg(conn: socket.socket, buffer: list) -> dict | None:
         return None                  # Malformed JSON — skip it
 
 # Game session
-def game_session(conn_1: socket.socket, conn_o: socket.socket) -> None:
+def game_session(
+    conn_1: socket.socket,
+    conn_o: socket.socket,
+    name_1: str,
+    name_2: str,
+) -> None:
     """
     Isolated game loop running on its own daemon thread.
     Manages one full competitive trivia match between two players.
     """
-    player_names = {conn_1: "Player 1", conn_o: "Player 2"}
+    player_roles = {conn_1: "Player 1", conn_o: "Player 2"}
+    display_names = {"Player 1": name_1, "Player 2": name_2}
     scores       = {conn_1: 0,          conn_o: 0}
 
     # Persistent receive buffers (one list per connection so they survive
@@ -82,8 +88,20 @@ def game_session(conn_1: socket.socket, conn_o: socket.socket) -> None:
     buffers = {conn_1: buf_1, conn_o: buf_o}
 
     # Welcome both players and tell them their role
-    send_msg(conn_1, {"type": "WELCOME", "payload": "Player 1"})
-    send_msg(conn_o, {"type": "WELCOME", "payload": "Player 2"})
+    send_msg(conn_1, {
+        "type": "WELCOME",
+        "payload": {
+            "role": "Player 1",
+            "player_names": display_names,
+        },
+    })
+    send_msg(conn_o, {
+        "type": "WELCOME",
+        "payload": {
+            "role": "Player 2",
+            "player_names": display_names,
+        },
+    })
 
     # Select TOTAL_ROUNDS unique questions from the bank (shuffled)
     selected_questions = random.sample(QUESTIONS, min(TOTAL_ROUNDS, len(QUESTIONS)))
@@ -101,6 +119,7 @@ def game_session(conn_1: socket.socket, conn_o: socket.socket) -> None:
             "round_label": round_label,
             "total_rounds": total_rounds,
             "is_tiebreaker": is_tiebreaker,
+            "player_names": display_names,
             "scores": {
                 "Player 1": scores[conn_1],
                 "Player 2": scores[conn_o],
@@ -122,6 +141,7 @@ def game_session(conn_1: socket.socket, conn_o: socket.socket) -> None:
             "options"     : q["options"],
             "timeout"     : ANSWER_TIMEOUT,
             "is_tiebreaker": is_tiebreaker,
+            "player_names" : display_names,
             "scores"      : {
                 "Player 1": scores[conn_1],
                 "Player 2": scores[conn_o]
@@ -186,7 +206,7 @@ def game_session(conn_1: socket.socket, conn_o: socket.socket) -> None:
         if correct_submissions:
             fastest_conn, _ = min(correct_submissions, key=lambda x: x[1])
             scores[fastest_conn] += 1
-            round_winner_name = player_names[fastest_conn]
+            round_winner_name = player_roles[fastest_conn]
 
         # Build per-player RESULT messages
         for conn in (conn_1, conn_o):
@@ -203,6 +223,7 @@ def game_session(conn_1: socket.socket, conn_o: socket.socket) -> None:
                 "round_winner"  : round_winner_name,
                 "explanation"   : q.get("explanation", ""),
                 "is_tiebreaker" : is_tiebreaker,
+                "player_names"  : display_names,
                 "scores"        : {
                     "Player 1": scores[conn_1],
                     "Player 2": scores[conn_o]
@@ -240,6 +261,7 @@ def game_session(conn_1: socket.socket, conn_o: socket.socket) -> None:
     game_over_msg = {
         "type"  : "GAME_OVER",
         "scores": {"Player 1": s1, "Player 2": s2},
+        "player_names": display_names,
         "winner": overall_winner
     }
     send_msg(conn_1, game_over_msg)
@@ -277,16 +299,16 @@ def start_server() -> None:
             if msg and msg.get("type") == "CONNECT":
                 player_name_hint = msg.get("name", "Anonymous")
                 print(f"[HANDSHAKE] '{player_name_hint}' joined the queue. Queue size: {len(matchmaking_queue)+1}")
-                matchmaking_queue.append(conn)
+                matchmaking_queue.append((conn, player_name_hint))
                 send_msg(conn, {"type": "WAITING", "payload": "Waiting for an opponent..."})
 
                 if len(matchmaking_queue) >= 2:
-                    player_1 = matchmaking_queue.pop(0)
-                    player_2 = matchmaking_queue.pop(0)
+                    player_1, name_1 = matchmaking_queue.pop(0)
+                    player_2, name_2 = matchmaking_queue.pop(0)
                     print("[MATCH] Two players matched. Spawning GameSession thread.")
                     session_thread = threading.Thread(
                         target=game_session,
-                        args=(player_1, player_2),
+                        args=(player_1, player_2, name_1, name_2),
                         daemon=True
                     )
                     session_thread.start()
