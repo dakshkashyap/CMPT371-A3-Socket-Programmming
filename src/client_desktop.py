@@ -372,9 +372,6 @@ class TriviaClientWindow(QMainWindow):
         self.header_label = QLabel("Round 1/10")
         self.header_label.setObjectName("title")
 
-        self.score_label = QLabel("Scoreboard updates when the round starts")
-        self.score_label.setObjectName("subtitle")
-
         self.category_label = QLabel("Category")
         self.category_label.setObjectName("tag")
 
@@ -416,7 +413,6 @@ class TriviaClientWindow(QMainWindow):
         self.locked_notice.setObjectName("lockedNotice")
 
         root.addWidget(self.header_label)
-        root.addWidget(self.score_label)
         root.addWidget(self.question_score)
         role_row = QHBoxLayout()
         role_row.addWidget(self.category_label)
@@ -897,10 +893,6 @@ class TriviaClientWindow(QMainWindow):
         round_text = msg.get("round_label") or f"{msg.get('round', '?')}/{msg.get('total_rounds', '?')}"
         suffix = " (Sudden Death)" if msg.get("is_tiebreaker") else ""
         self.header_label.setText(f"Round {round_text}{suffix}")
-        self.score_label.setText(
-            f"{self._name_for('Player 1')}: {scores.get('Player 1', 0)}      "
-            f"{self._name_for('Player 2')}: {scores.get('Player 2', 0)}"
-        )
         self.category_label.setText(f"Category: {msg.get('category', 'Unknown')}")
         self.role_label.setText(self._name_for(self.my_role or "Player"))
         self.question_label.setText(msg.get("question", ""))
