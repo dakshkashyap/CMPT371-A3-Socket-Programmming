@@ -102,6 +102,17 @@ def _score_line(scores: dict, player_names: dict) -> str:
 def play_feedback_sound(kind: str) -> None:
     """Play a lightweight sound cue for round outcomes."""
     if winsound:
+        # Try the Windows system event chime first (works even if Beep is muted).
+        try:
+            if kind == "correct":
+                winsound.MessageBeep(getattr(winsound, "MB_ICONASTERISK", -1))
+            elif kind == "wrong":
+                winsound.MessageBeep(getattr(winsound, "MB_ICONHAND", -1))
+            else:
+                winsound.MessageBeep(getattr(winsound, "MB_ICONEXCLAMATION", -1))
+        except RuntimeError:
+            pass
+
         try:
             if kind == "correct":
                 winsound.Beep(880, 120)

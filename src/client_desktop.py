@@ -773,20 +773,35 @@ class TriviaClientWindow(QMainWindow):
         self.result_score.setText(f"Scoreboard - {text}")
 
     def _play_feedback_sound(self, kind: str) -> None:
-        if winsound:
-            try:
-                if kind == "correct":
-                    winsound.Beep(880, 120)
-                    winsound.Beep(1100, 120)
-                elif kind == "wrong":
-                    winsound.Beep(280, 220)
-                elif kind == "timeout":
-                    winsound.Beep(440, 140)
-                    winsound.Beep(300, 180)
-            except RuntimeError:
+        def _emit_sound() -> None:
+            if winsound:
+                # System chime fallback for machines where tone beeps are muted.
+                try:
+                    if kind == "correct":
+                        winsound.MessageBeep(getattr(winsound, "MB_ICONASTERISK", -1))
+                    elif kind == "wrong":
+                        winsound.MessageBeep(getattr(winsound, "MB_ICONHAND", -1))
+                    else:
+                        winsound.MessageBeep(getattr(winsound, "MB_ICONEXCLAMATION", -1))
+                except RuntimeError:
+                    pass
+
+                try:
+                    if kind == "correct":
+                        winsound.Beep(880, 120)
+                        winsound.Beep(1100, 120)
+                    elif kind == "wrong":
+                        winsound.Beep(280, 220)
+                    elif kind == "timeout":
+                        winsound.Beep(440, 140)
+                        winsound.Beep(300, 180)
+                except RuntimeError:
+                    print("\a", end="", flush=True)
+            else:
                 print("\a", end="", flush=True)
-        else:
-            print("\a", end="", flush=True)
+
+        threading.Thread(target=_emit_sound, daemon=True).start()
+        QApplication.beep()
 
     def _show_category_reveal(self, msg: dict) -> None:
         self.player_names = msg.get("player_names", self.player_names)
