@@ -18,8 +18,10 @@
 This project is a **real-time, competitive Trivia Quiz system** built using Python's Socket API over TCP.  
 Two players connect to a central server and compete head-to-head by answering the same multiple-choice trivia questions simultaneously.
 
+We initially built a CLI client (`client.py`) as our working prototype, then iterated to a full desktop GUI client (`client_desktop.py`) — both are fully functional and connect to the same server.
+
 **Key features:**
-- 20-question bank across 4 categories: Science, History, Technology, and Geography
+- JSON-style question bank of 20+ networking questions across 7 categories: Fundamentals, Application Layer, Transport Layer, Network Layer, Link Layer, Wireless and Security, adapted from our course textbook, Computer Networking: A Top-Down Approach, 9th edition (compiled with the help of ChatGPT).
 - Server-enforced 15-second answer timer per round (10 questions per game)
 - First correct answer wins the round point — simultaneous competition
 - Sudden-death tiebreaker rounds if scores are tied after 10 rounds
@@ -69,7 +71,7 @@ As required by the project specifications, we have identified and handled (or ex
 
 To run this project you need:
 - **Python 3.10** or higher
-- **PySide6** — required for the desktop GUI client (`client_desktop.py`)
+- **PySide6** — required for the desktop GUI client (`client_desktop.py`); installed via `requirements.txt` in Step 2
 - The CLI client (`client.py`) has no external dependencies — all modules used (`socket`, `threading`, `json`, `sys`, `time`, `random`) are part of the Python Standard Library
 - A terminal that supports **ANSI escape codes** for the CLI client (macOS Terminal, Linux bash, Windows Terminal, VS Code terminal)
 
@@ -78,8 +80,8 @@ To run this project you need:
 ### Step 1 - Clone / Download the repository
 
 ```bash
-git clone https://github.com/dakshkashyap/CMPT371-A3-Socket-Programmming.git
-cd CMPT371-A3-Socket-Programmming/src
+git clone https://github.com/dakshkashyap/CMPT371_A3_Competitive_Trivia_Quiz_System.git
+cd CMPT371_A3_Competitive_Trivia_Quiz_System/src
 ```
 
 ### Step 2 - Create a virtual environment and install dependencies
@@ -91,9 +93,11 @@ python -m venv .venv
 .venv\Scripts\activate        # Windows
 source .venv/bin/activate     # macOS / Linux
 
-# Install PySide6 (required for the desktop GUI client):
-pip install PySide6
+# Install all dependencies from requirements.txt (required for the desktop GUI client):
+pip install -r requirements.txt
 ```
+
+> **Note:** Only `PySide6` is installed. The CLI client (`client.py`) requires no pip packages.
 
 ### Step 3 - Start the Server
 
@@ -112,26 +116,30 @@ Leave this terminal running throughout the game.
 
 ### Step 4 - Launch the clients
 
-**Desktop GUI client (recommended)** — open two separate terminals and run in each:
+**Option A — Desktop GUI client (recommended)**
+
+Open **two separate terminals** (both inside the `src/` directory) and run in each:
 
 ```bash
 python client_desktop.py
 ```
 
-Enter a name and server address in the connection screen, then click **Connect**. The second player connecting will trigger the match to start automatically.
+Enter a name and server address (`127.0.0.1`) in the connection screen, then click **Connect**. The second player connecting will trigger the match to start automatically.
 
-**CLI client (alternative)** — open two separate terminals and run in each:
+> **Audio note:** Sound feedback (correct/wrong/timeout tones) is Windows-only. On macOS and Linux the sounds are silently skipped — this is expected.  <!-- FIXED: added audio note for grader -->
+
+**Option B — CLI client (alternative / no dependencies)**
+
+Open **two separate terminals** and run in each:
 
 ```bash
 python client.py
 ```
 
 Expected interaction:
-```
 Enter your name: Alice
 Connecting to 127.0.0.1:5050...
 Waiting for an opponent...
-```
 
 Both clients will now simultaneously receive and display trivia questions.
 
@@ -150,6 +158,7 @@ Press **Ctrl+C** in Terminal 1:
 ```
 [SHUTDOWN] Server shutting down gracefully (Ctrl+C).
 ```
+Both client terminals will print a disconnect message and exit cleanly once the server closes the connection.
 
 ## 6. Technical Protocol Details (JSON over TCP)
 
@@ -175,13 +184,14 @@ We designed a custom application-layer protocol using **JSON messages delimited 
 ## 7. File Structure
 
 ```text
-CMPT371-A3-Socket-Programmming/
+CMPT371_A3_Competitive_Trivia_Quiz_System/
 ├── README.md
+├── requirements.txt         ← pip dependencies (PySide6)
 └── src/
     ├── server.py            ← Server: matchmaking, game logic, scoring, disconnect handling
     ├── client_desktop.py    ← Desktop GUI client: PySide6 interface, animations, audio feedback
     ├── client.py            ← CLI client: ANSI terminal interface, live countdown
-    └── questions.py         ← Question bank (20 questions, 4 categories)
+    └── questions.py         ← Question bank (20+ questions, 7 categories)
 ```
 
 ## 8. Academic Integrity & References
