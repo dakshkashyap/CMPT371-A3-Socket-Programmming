@@ -1,4 +1,15 @@
+"""
+CMPT 371 A3 - Competitive Trivia Quiz System (Desktop GUI Client)
+Architecture : PySide6 GUI over TCP Socket
+Protocol     : Newline-delimited JSON messages over TCP
 
+How it works
+============
+1. Presents a connect screen where the player enters a name and server address.
+2. Connects to the server and handles all JSON protocol messages.
+3. Displays animated question cards with a live countdown progress bar.
+4. Plays audio feedback (Windows) on correct, wrong, or timed-out answers.
+"""
 from __future__ import annotations
 
 import json
