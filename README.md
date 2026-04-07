@@ -197,10 +197,11 @@ CMPT371_A3_Competitive_Trivia_Quiz_System/
 ## 8. Academic Integrity & References
 
 - **Code Origin:** All socket boilerplate was adapted from the course tutorial "TCP Echo Server". The game logic, custom protocol, concurrent answer collection, GUI interface, and audio synthesis were written by the group members.
-- **GenAI Usage:**
-  - ChatGPT / Perplexity AI was used to assist with the ANSI colour codes for the CLI interface, the `CountdownTimer` thread design, and README formatting.
-  - Claude Code (Anthropic) was used to assist with the PySide6 GUI implementation, audio synthesis, and disconnect-handling logic.
-  - All generated code was reviewed, understood, and modified by the group.
+- **GenAI Usage (Code Citations added inline via `# -- AI Generated/Assisted --` comments):**
+  - **ChatGPT / Perplexity AI**: Used to assist with the TCP buffer logic (`recv_msg` buffering mechanism to split on `\n`), the daemon threading architecture for matchmaking and timers, and the ANSI UI layout in `client.py` and `server.py`.
+  - **ChatGPT**: Used to help compile the question bank in `questions.py` across 7 networking categories based on the course textbook.
+  - **Claude Code (Anthropic)**: Used to assist with the `PySide6` UI boilerplate, animations, audio synthesis, and graceful mid-game disconnect-handling logic in `client_desktop.py`.
+  - *Note:* All AI-generated/assisted code was thoroughly reviewed, understood, tested, and actively modified by the group to ensure deep comprehension and functionality.
 - **References:**
   - [Python Socket Programming HOWTO](https://docs.python.org/3/howto/sockets.html)
   - [Real Python: Intro to Python Threading](https://realpython.com/intro-to-python-threading/)

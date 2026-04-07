@@ -1,3 +1,5 @@
+# -- AI Generated/Assisted --
+# The structure and trivia questions were compiled with the help of ChatGPT based on the textbook
 """
 Question bank: 20+ trivia questions on networking across 7 categories used by server.py (with the help of ChatGPT)
 Adapted and inspired by the topic coverage from course textbook -

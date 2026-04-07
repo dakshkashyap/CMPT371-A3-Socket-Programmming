@@ -12,6 +12,8 @@ How it works
 """
 from __future__ import annotations
 
+# -- AI Generated/Assisted --
+# PySide6 boilerplate, threading integration, and audio synthesis were assisted by Claude Code (Anthropic)
 import json
 import socket
 import threading

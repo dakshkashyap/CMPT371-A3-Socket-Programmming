@@ -23,20 +23,19 @@ import json
 import random
 import time
 
-# Server configuration
-HOST           = "127.0.0.1"   # Bind to localhost
+# Server configuration (Hardware/Network Constants)
+HOST           = "127.0.0.1"    # Bind to localhost (loopback interface)
 PORT           = 5050           # Listening port
 TOTAL_ROUNDS   = 10             # Number of questions per game
 ANSWER_TIMEOUT = 15.0           # Seconds each player has to answer
 CATEGORY_REVEAL_DELAY = 1.8     # Delay before showing each round question
-ROUND_RESULT_DELAY = 3.2         # Delay before moving to next round
+ROUND_RESULT_DELAY = 3.2        # Delay before moving to next round
 
 from questions import QUESTIONS
 
 # Utility helpers
 class PlayerDisconnectedError(Exception):
     """Raised inside game_session when a player drops mid-game."""
-
 
 def send_msg(conn: socket.socket, payload: dict) -> bool:
     """
@@ -51,6 +50,9 @@ def send_msg(conn: socket.socket, payload: dict) -> bool:
     except OSError:
         return False
 
+# -- AI Assisted Logic --
+# This function uses a list buffer parameter to work around TCP stream chunking
+# ChatGPT helped design this robust newline-delimited message parser.
 def recv_msg(conn: socket.socket, buffer: list) -> dict | None:
     """
     Receive data from a socket using a persistent per-connection buffer list
@@ -317,18 +319,19 @@ def game_session(
         conn_1.close()
         conn_o.close()
 
-
 # Main server event loop
-
+# The main server loop structure adapted from the "TCP Echo Server" tutorial.
 def start_server() -> None:
     """
     Binds to HOST:PORT, listens for incoming TCP connections, performs the
     CONNECT handshake, and manages a matchmaking queue. When two players are
     queued a new GameSession daemon thread is spawned for them.
     """
+    # Initialize an IPv4 (AF_INET) TCP (SOCK_STREAM) socket
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind((HOST, PORT))
+    # Set socket to listening mode with a backlog
     server.listen()
     print(f"[STARTING] Trivia Quiz Server listening on {HOST}:{PORT}")
 
@@ -336,6 +339,7 @@ def start_server() -> None:
 
     try:
         while True:
+            # Block until a new client connection arrives
             conn, addr = server.accept()
             print(f"[CONNECT] New connection from {addr}")
 
