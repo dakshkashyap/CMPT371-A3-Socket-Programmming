@@ -82,7 +82,7 @@ To run this project you need:
 
 ```bash
 git clone https://github.com/dakshkashyap/CMPT371_A3_Competitive_Trivia_Quiz_System.git
-cd CMPT371_A3_Competitive_Trivia_Quiz_System/src
+cd CMPT371_A3_Competitive_Trivia_Quiz_System
 ```
 
 ### Step 2 - Create a virtual environment and install dependencies
@@ -105,7 +105,7 @@ pip install -r requirements.txt
 Open **Terminal 1** and run:
 
 ```bash
-python server.py
+python src/server.py
 ```
 
 Expected output:
@@ -122,7 +122,7 @@ Leave this terminal running throughout the game.
 Open **two separate terminals** (both inside the `src/` directory) and run in each:
 
 ```bash
-python client_desktop.py
+python src/client_desktop.py
 ```
 
 Enter a name and server address (`127.0.0.1`) in the connection screen, then click **Connect**. The second player connecting will trigger the match to start automatically.
@@ -134,7 +134,7 @@ Enter a name and server address (`127.0.0.1`) in the connection screen, then cli
 Open **two separate terminals** and run in each:
 
 ```bash
-python client.py
+python src/client.py
 ```
 
 Expected interaction:
