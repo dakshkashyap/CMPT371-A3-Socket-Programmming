@@ -65,7 +65,7 @@ As required by the project specifications, we have identified and handled (or ex
 
 ## 3. Video Demo
 
-[Watch Project Demo](https://www.youtube.com/watch?v=REPLACE_WITH_YOUR_LINK)
+[Watch Project Demo](https://youtu.be/Con3-zrUb6w)
 
 ## 4. Prerequisites (Fresh Environment)
 
