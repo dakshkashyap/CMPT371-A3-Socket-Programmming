@@ -202,6 +202,7 @@ CMPT371_A3_Competitive_Trivia_Quiz_System/
   - **ChatGPT / Perplexity AI**: Used to assist with the TCP buffer logic (`recv_msg` buffering mechanism to split on `\n`), the daemon threading architecture for matchmaking and timers, and the ANSI UI layout in `client.py` and `server.py`.
   - **ChatGPT**: Used to help compile the question bank in `questions.py` across 7 networking categories based on the course textbook.
   - **Claude Code (Anthropic)**: Used to assist with the `PySide6` UI boilerplate, animations, audio synthesis, and graceful mid-game disconnect-handling logic in `client_desktop.py`.
+  - **Gemini** was used to help in writing and polishing README.md.
   - *Note:* All AI-generated/assisted code was thoroughly reviewed, understood, tested, and actively modified by the group to ensure deep comprehension and functionality.
 - **References:**
   - [Python Socket Programming HOWTO](https://docs.python.org/3/howto/sockets.html)
