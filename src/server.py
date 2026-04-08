@@ -708,8 +708,8 @@ def start_server() -> None:
     # SO_REUSEADDR allows us to restart the server immediately after closing it without OS port-blocking errors
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind((HOST, PORT))
-    
     server.listen() # Open the door
+    server.settimeout(1.0)  # Unblock accept() periodically so Ctrl+C is handled
     print(f"[STARTING] Trivia Quiz Server listening on {HOST}:{PORT}")
 
     matchmaking_queue = [] # Our lobby waiting room
@@ -717,7 +717,10 @@ def start_server() -> None:
     try:
         while True:
             # The server pauses here (blocks) until a client knocks on the door
-            conn, addr = server.accept()
+            try:
+                conn, addr = server.accept()
+            except socket.timeout:
+                continue
             print(f"[CONNECT] New connection from {addr}")
 
             buf = [""]
